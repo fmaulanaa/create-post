@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Viral Generator - Floating Text Box Edition</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --bg-warning: #FFF3E0;
+            --dark-color: #333333;
+            --body-bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--body-bg);
+            color: var(--dark-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .btn {
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #ffffff;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-browse {
+            background-color: var(--success-color);
+            margin-bottom: 10px;
+        }
+
+        .btn-generate {
+            background-color: var(--primary-color);
+            font-size: 1.2rem;
+            padding: 14px 30px;
+            margin: 25px 0;
+            width: 85%;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-label {
+            font-size: 0.9rem;
+            color: #666666;
+            margin-bottom: 25px;
+            display: block;
+            word-break: break-all;
+        }
+
+        .caption-section {
+            margin: 20px 0 5px 0;
+        }
+
+        .caption-section label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: block;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 140px;
+            font-family: 'Arial', sans-serif;
+            font-size: 1rem;
+            padding: 12px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #777777;
+            margin-top: 6px;
+        }
+
+        .info-frame {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .watermark-info {
+            background-color: var(--bg-warning);
+            border: 1px solid var(--warning-color);
+            border-radius: 4px;
+            padding: 12px;
+            width: 90%;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+
+        .watermark-title {
+            font-weight: bold;
+            color: var(--warning-color);
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .watermark-text {
+            font-weight: bold;
+            color: var(--warning-color);
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .technical-info {
+            font-size: 0.8rem;
+            color: #666666;
+        }
+
+        .text-blue {
+            color: #0d6efd;
+        }
+
+        .text-orange {
+            color: var(--warning-color);
+        }
+
+        #hidden-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="btn btn-browse" onclick="document.getElementById('file-input').click()">Pilih Gambar</button>
+    <input id="file-input" type="file" accept="image/*" onchange="handleFileSelect(event)">
+    <span id="lbl-file" class="file-label">Belum ada file</span>
+
+    <div class="caption-section">
+        <label>MASUKKAN CAPTION</label>
+        <textarea id="txt-caption" placeholder="Ketik caption quote di sini..."></textarea>
+        <div class="hint">Caption akan otomatis diubah menjadi huruf besar (UPPERCASE)</div>
+    </div>
+
+    <button class="btn btn-generate" onclick="generateImage()">GENERATE GAMBAR</button>
+
+    <div class="info-frame">
+        <div class="watermark-info">
+            <div class="watermark-title">© WATERMARK SETTINGS</div>
+            <div class="watermark-text">© FmaulanaaFB</div>
+            <div class="technical-info">Ukuran: 45px | Warna: Putih | Posisi: Top-Left</div>
+        </div>
+        
+        <div class="technical-info">📌 Output otomatis terunduh langsung di browser Anda</div>
+        <div class="technical-info">🎨 Ukuran Canvas: 1080 x 1350 (Gambar memenuhi seluruh canvas)</div>
+        <div class="technical-info text-blue">🖼️ Kotak teks melayang dengan sudut melengkung & border putih</div>
+        <div class="technical-info text-orange">🔒 Watermark otomatis: © FmaulanaaFB (kiri atas)</div>
+    </div>
+</div>
+
+<canvas id="hidden-canvas" width="1080" height="1350"></canvas>
+
+<script>
+    // Konfigurasi Dimensi Kanvas Utuh
+    const CANVAS_W = 1080;
+    const CANVAS_H = 1350;
+
+    // Konfigurasi Watermark
+    const WATERMARK_TEXT = "© FmaulanaaFB";
+    const WATERMARK_SIZE = 45;
+    const WATERMARK_COLOR = "rgba(255, 255, 255, 1)"; 
+
+    let selectedImageSrc = null;
+    let selectedFileName = "";
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            selectedFileName = file.name;
+            document.getElementById('lbl-file').innerText = selectedFileName;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedImageSrc = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function wrapText(ctx, text, maxWidth) {
+        const words = text.split(" ");
+        const lines = [];
+        let currentLine = "";
+
+        for (let i = 0; i < words.length; i++) {
+            let testLine = currentLine + (currentLine ? " " : "") + words[i];
+            let metrics = ctx.measureText(testLine);
+            let testWidth = metrics.width;
+
+            if (testWidth <= maxWidth) {
+                currentLine = testLine;
+            } else {
+                if (currentLine) lines.push(currentLine);
+                currentLine = words[i];
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+        return lines;
+    }
+
+    // Kalkulator Ukuran Font Menyesuaikan Ruang Di Dalam Kotak
+    function getFontForBox(ctx, text, maxWidth, maxHeight) {
+        for (let size = 65; size >= 24; size -= 2) {
+            ctx.font = `normal ${size}px 'Anton', sans-serif`;
+            const lines = wrapText(ctx, text, maxWidth);
+            const lineHeight = size * 1.25;
+            const totalHeight = lines.length * lineHeight;
+            
+            if (totalHeight <= maxHeight) {
+                return { size, lines, lineHeight, totalHeight };
+            }
+        }
+        ctx.font = `normal 24px 'Anton', sans-serif`;
+        const lines = wrapText(ctx, text, maxWidth);
+        return { size: 24, lines, lineHeight: 24 * 1.25, totalHeight: lines.length * 24 * 1.25 };
+    }
+
+    // Fungsi menggambar persegi dengan sudut membulat (Rounded Rectangle)
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
+    function generateImage() {
+        if (!selectedImageSrc) {
+            alert("Error: Silakan pilih gambar terlebih dahulu.");
+            return;
+        }
+
+        const caption = document.getElementById('txt-caption').value.trim().toUpperCase();
+        if (!caption) {
+            alert("Error: Kolom caption tidak boleh kosong.");
+            return;
+        }
+
+        const canvas = document.getElementById('hidden-canvas');
+        const ctx = canvas.getContext('2d');
+
+        const img = new Image();
+        img.onload = function() {
+            // --- 1. FILL IMAGE TO ENTIRE CANVAS (1080 x 1350) ---
+            // Memotong gambar bagian tengah agar memenuhi rasio kanvas vertikal tanpa distorsi
+            let imgRatio = img.width / img.height;
+            let canvasRatio = CANVAS_W / CANVAS_H;
+            let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height;
+
+            if (imgRatio > canvasRatio) {
+                srcW = img.height * canvasRatio;
+                srcX = (img.width - srcW) / 2;
+            } else {
+                srcH = img.width / canvasRatio;
+                srcY = (img.height - srcH) / 2;
+            }
+
+            ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, CANVAS_W, CANVAS_H);
+
+            // --- 2. REKAYASA BANNER TEXT BOX (PERSIS SEPERTI REFERENSI) ---
+            // Konfigurasi letak kotak melayang di area bawah kanvas
+            const boxMarginX = 40; // Jarak kotak dari sisi kiri & kanan kanvas
+            const boxWidth = CANVAS_W - (boxMarginX * 2); // 1000px
+            const boxHeight = 440; // Tinggi kotak teks
+            const boxY = CANVAS_H - boxHeight - 80; // Diposisikan melayang 80px dari bawah kanvas
+            const borderRadius = 45; // Kelengkungan sudut kotak
+            const innerPadding = 50; // Jarak teks dari garis border dalam
+
+            // A. Menggambar Background Kotak (Biru Tua Semi Transparan)
+            ctx.save();
+            drawRoundedRect(ctx, boxMarginX, boxY, boxWidth, boxHeight, borderRadius);
+            ctx.fillStyle = "rgba(4, 30, 83, 0.88)"; // Kombinasi warna Deep Blue dengan opacity 88%
+            ctx.fill();
+
+            // B. Menggambar Bingkai/Border Kotak (Putih Tebal)
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.stroke();
+            ctx.restore();
+
+            // --- 3. PROSES RENDERING TEKS DI DALAM KOTAK ---
+            const maxTextWidth = boxWidth - (innerPadding * 2); // Area bersih untuk teks (900px)
+            const maxTextHeight = boxHeight - (innerPadding * 2);
+            
+            const fontDetails = getFontForBox(ctx, caption, maxTextWidth, maxTextHeight);
+            
+            // Menghitung koordinat Y awal agar baris teks berada tepat di tengah-tengah kotak secara vertikal
+            let startY = boxY + ((boxHeight - fontDetails.totalHeight) / 2) + fontDetails.lineHeight / 1.3;
+
+            fontDetails.lines.forEach((line, index) => {
+                ctx.font = `normal ${fontDetails.size}px 'Anton', sans-serif`;
+                let textMetrics = ctx.measureText(line);
+                
+                // Koordinat X agar teks rata tengah (Center) di dalam kotak
+                let x = boxMarginX + (boxWidth - textMetrics.width) / 2;
+                let y = startY + (index * fontDetails.lineHeight);
+
+                // Seluruh teks berwarna putih polos, bersih, dan tegas sesuai referensi terbaru
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillText(line, x, y);
+            });
+
+            // --- 4. TULISAN KECIL "Baca caption nya" DI KANAN BAWAH ---
+            ctx.font = "bold 26px Arial, sans-serif";
+            ctx.fillStyle = "#FFFFFF";
+            let subText = "Baca caption nya";
+            let subTextWidth = ctx.measureText(subText).width;
+            ctx.fillText(subText, CANVAS_W - subTextWidth - boxMarginX, CANVAS_H - 40);
+
+            // --- 5. PROSES GENERATE WATERMARK OTOMATIS (Kiri Atas) ---
+            ctx.font = `normal ${WATERMARK_SIZE}px 'Anton', sans-serif`;
+            ctx.fillStyle = WATERMARK_COLOR;
+            ctx.fillText(WATERMARK_TEXT, 30, 30 + WATERMARK_SIZE); 
+
+            // --- 6. AUTOMATIC DOWNLOAD PIPELINE ---
+            const now = new Date();
+            const timestamp = now.getFullYear() +
+                String(now.getMonth() + 1).padStart(2, '0') +
+                String(now.getDate()).padStart(2, '0') + "_" +
+                String(now.getHours()).padStart(2, '0') +
+                String(now.getMinutes()).padStart(2, '0') +
+                String(now.getSeconds()).padStart(2, '0');
+
+            const baseName = selectedFileName.split('.').slice(0, -1).join('.');
+            
+            const downloadLink = document.createElement('a');
+            downloadLink.download = `${baseName}_box_viral_${timestamp}.jpg`;
+            downloadLink.href = canvas.toDataURL("image/jpeg", 0.95); 
+            downloadLink.click();
+
+            alert("Sukses: Gambar berhasil diproses dengan Text Box dan otomatis diunduh!");
+        };
+        
+        img.src = selectedImageSrc;
+    }
+</script>
+
+</body>
+</html>
