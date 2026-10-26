@@ -213,9 +213,15 @@
             document.getElementById('lbl-file').innerText = selectedFileName;
             
             const reader = new FileReader();
+            // FileReader membaca file lokal sebagai Data URL agar gambar dapat
+            // dirender oleh elemen Image dan Canvas tanpa mengunggahnya ke server.
             reader.onload = function(e) {
                 selectedImageSrc = e.target.result;
-            }
+            };
+            reader.onerror = function() {
+                selectedImageSrc = null;
+                alert("Gagal membaca file gambar. Silakan pilih file lain.");
+            };
             reader.readAsDataURL(file);
         }
     }
@@ -380,6 +386,11 @@
             alert("Sukses: Gambar berhasil diproses dengan Text Box dan otomatis diunduh!");
         };
         
+        // Beri umpan balik bila browser tidak dapat mendekode gambar terpilih.
+        img.onerror = function() {
+            alert("Gambar tidak dapat dibuka oleh browser. Coba gunakan file gambar lain.");
+        };
+
         img.src = selectedImageSrc;
     }
 </script>
